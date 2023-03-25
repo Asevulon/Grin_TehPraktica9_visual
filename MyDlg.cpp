@@ -154,7 +154,7 @@ DWORD WINAPI MyDlg::thfunc(LPVOID p)
 		th1.join();
 		th2.join();
 
-
+		if(buf->filtr)
 		if (calc > buf->cap)
 		{
 			CString str;
@@ -172,7 +172,7 @@ DWORD WINAPI MyDlg::thfunc(LPVOID p)
 			buf->ctrlog.InsertString(-1, L" ");
 			buf->ctrlog.InsertString(-1, L" ");
 
-			buf->ctrlog.SetTopIndex(buf->log.GetCount() - 1);
+			buf->ctrlog.SetTopIndex(buf->ctrlog.GetCount() - 1);
 			continue;
 		}
 
