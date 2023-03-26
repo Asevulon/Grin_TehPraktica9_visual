@@ -58,4 +58,5 @@ public:
 	DWORD_PTR tid;
 	bool ReadyToBeTerminated;
 	bool gonnakill;
+	int ApprN;
 };

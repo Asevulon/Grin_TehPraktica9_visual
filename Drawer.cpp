@@ -143,12 +143,13 @@ void Drawer::DrawGraph(vector<double> data, vector<double> key)
 
 	dc->BitBlt(0, 0, frame.Width(), frame.Height(), &memDC, 0, 0, SRCCOPY);
 }
-void Drawer::DrawAppr(vector<double>val, vector<double>key, vector<double>appr)
+void Drawer::DrawAppr(vector<double>val, vector<double>key, vector<double>apprval,vector<double> apprkey)
 {
 	if (!init) return;
 	if (key.empty())return;
 	if (val.empty())return;
-	if (appr.empty())return;
+	if (apprval.empty())return;
+	if (apprkey.empty())return;
 
 
 	//LocalSort(val, key);
@@ -185,10 +186,10 @@ void Drawer::DrawAppr(vector<double>val, vector<double>key, vector<double>appr)
 	int actual_right = actual_left + actual_width;
 
 
-	double data_x_min = *min_element(key.begin(), key.end());
-	double data_x_max = *max_element(key.begin(), key.end());
-	double data_y_min = *min_element(val.begin(), val.end());
-	double data_y_max = *max_element(val.begin(), val.end());
+	double data_x_min = min(*min_element(key.begin(), key.end()), *min_element(apprkey.begin(), apprkey.end()));
+	double data_x_max = max(*max_element(key.begin(), key.end()), *max_element(apprkey.begin(), apprkey.end()));
+	double data_y_min = min(*min_element(val.begin(), val.end()), *min_element(apprval.begin(), apprval.end()));
+	double data_y_max = max(*max_element(val.begin(), val.end()), *max_element(apprval.begin(), apprval.end()));
 
 	// Белый фон.
 	memDC.FillSolidRect(frame, RGB(255, 255, 255));
@@ -235,23 +236,13 @@ void Drawer::DrawAppr(vector<double>val, vector<double>key, vector<double>appr)
 	memDC.SelectObject(&data_pen);
 
 	
-	double x0(data_x_min);
-	double y0 = appr[0] * x0 + appr[1];
-	double x1(data_x_max);
-	double y1 = appr[0] * x1 + appr[1];
-
-	if (y0 < data_y_min)data_y_min = y0;
-	if (y1 > data_y_max)data_y_max = y1;
-
 	
-	y0 = convert_range(y0, actual_top, actual_bottom, data_y_max, data_y_min);
-	y1 = convert_range(y1, actual_top, actual_bottom, data_y_max, data_y_min);
-
-	x0 = convert_range(x0, actual_right, actual_left, data_x_max, data_x_min);
-	x1 = convert_range(x1, actual_right, actual_left, data_x_max, data_x_min);
-
-	memDC.MoveTo(x0, y0);
-	memDC.LineTo(x1, y1);
+	apprval = convert_range(apprval, actual_top, actual_bottom, data_y_max, data_y_min);
+	apprkey = convert_range(apprkey, actual_right, actual_left, data_x_max, data_x_min);
+	
+	memDC.MoveTo(apprkey[0], apprval[0]);
+	for (int i = 0; i < apprval.size(); i++)memDC.LineTo(apprkey[i], apprval[i]);
+	
 
 	memDC.SelectObject(&data_pen2);
 

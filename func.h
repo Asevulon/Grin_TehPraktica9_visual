@@ -14,7 +14,9 @@ using namespace std;
 #define RANDMIN -200.
 int svd_hestenes(int m_m, int n_n, vector<double>& a, vector<double>& u, vector<double>& v, vector<double>& sigma);
 float MHJ(int kk, vector<vector<double>>A, vector<double> B, vector<double> &x, int& calc);
-float LinearApprMHJ(int kk, vector<double> val, vector<double> key, vector<double>& x, int& calc);
+float ApprMHJ(int kk, vector<double> val, vector<double> key, vector<double>& x, int& calc);
+void MakeApprValnKeys(vector<double>appr, double xmin, double xmax, int steps, vector<double>&val,vector<double>&keys);
+
 double Apprfunc(vector<double>& val, vector<double>& key, vector<double>& x);
 double mist(vector<vector<double>>& A, vector<double>& B, vector<double>& x);
 

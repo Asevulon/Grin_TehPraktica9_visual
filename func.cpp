@@ -168,7 +168,7 @@ float MHJ(int kk, vector<vector<double>>A, vector<double>B,vector<double>& x, in
 	delete p;
 	return fb;
 }
-float LinearApprMHJ(int kk, vector<double> val, vector<double> key, vector<double>& x, int& calc)
+float ApprMHJ(int kk, vector<double> val, vector<double> key, vector<double>& x, int& calc)
 {
 	calc = 0;
 	// kk - количество параметров; x - массив параметров
@@ -243,7 +243,14 @@ double Apprfunc(vector<double>& val, vector<double>& key, vector<double>& x)
 	double res = 0;
 	for (int i = 0; i < val.size(); i++)
 	{
-		double temp = val[i] - x[0] * key[i] - x[1];
+		double temp = 0;
+		double keypwrd = 1;
+		for (auto& item : x)
+		{
+			temp += item * keypwrd;
+			keypwrd *= key[i];
+		}
+		temp = val[i] - temp;
 		res += temp * temp;
 	}
 	return res;
@@ -351,4 +358,22 @@ void PrintIter(int i, ofstream& log)
 {
 	log << "\n\n\nЧисло Итераций: " << i;
 
+}
+
+
+void MakeApprValnKeys(vector<double>appr, double xmin, double xmax, int steps, vector<double>& val, vector<double>& keys)
+{
+	double steplen = (xmax - xmin) / (steps - 1.);
+	for (double i = xmin; i <= xmax; i += steplen)
+	{
+		keys.push_back(i);
+		double xpwrd = 1;
+		double y = 0;
+		for (auto& item : appr)
+		{
+			y += item * xpwrd;
+			xpwrd *= i;
+		}
+		val.push_back(y);
+	}
 }

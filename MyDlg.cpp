@@ -26,6 +26,7 @@ MyDlg::MyDlg(CWnd* pParent /*=nullptr*/)
 	, appr(false)
 	, NeedToDraw(false)
 	, ReadyToBeTerminated(true)
+	, ApprN(2)
 {
 	m_hIcon = AfxGetApp()->LoadIcon(IDR_MAINFRAME);
 }
@@ -38,6 +39,7 @@ void MyDlg::DoDataExchange(CDataExchange* pDX)
 	DDX_Control(pDX, IDC_LIST1, log);
 	DDX_Control(pDX, IDC_LIST2, ctrlog);
 	DDX_Text(pDX, IDC_EDIT3, cap);
+	DDX_Text(pDX, IDC_EDIT4, ApprN);
 }
 
 BEGIN_MESSAGE_MAP(MyDlg, CDialogEx)
@@ -244,8 +246,7 @@ DWORD WINAPI MyDlg::thfunc(LPVOID p)
 	if (buf->appr)
 	{
 		vector<double>x;
-		x.push_back(RANDMIN + RANDMAX * double(rand()) / double(RAND_MAX));
-		x.push_back(RANDMIN + RANDMAX * double(rand()) / double(RAND_MAX));
+		for (int i = 0; i < buf->ApprN; i++) x.push_back(RANDMIN + RANDMAX * double(rand()) / double(RAND_MAX));
 
 		
 		CString str;
@@ -256,8 +257,10 @@ DWORD WINAPI MyDlg::thfunc(LPVOID p)
 
 
 		int calc = 0;
-		LinearApprMHJ(2, iter, cas, x, calc);
-		buf->drw.DrawAppr(iter, cas, x);
+		ApprMHJ(buf->ApprN, iter, cas, x, calc);
+		vector<double>aval, akey;
+		MakeApprValnKeys(x, *min_element(cas.begin(), cas.end()), *max_element(cas.begin(), cas.end()), 200, aval, akey);
+		buf->drw.DrawAppr(iter, cas, aval, akey);
 	}
 	else buf->drw.DrawGraph(iter, cas);
 
