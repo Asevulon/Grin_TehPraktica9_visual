@@ -23,6 +23,9 @@ MyDlg::MyDlg(CWnd* pParent /*=nullptr*/)
 	, len(20)
 	, filtr(false)
 	, cap(1e4)
+	, appr(false)
+	, NeedToDraw(false)
+	, ReadyToBeTerminated(true)
 {
 	m_hIcon = AfxGetApp()->LoadIcon(IDR_MAINFRAME);
 }
@@ -42,6 +45,10 @@ BEGIN_MESSAGE_MAP(MyDlg, CDialogEx)
 	ON_WM_QUERYDRAGICON()
 	ON_BN_CLICKED(IDOK, &MyDlg::OnBnClickedOk)
 	ON_BN_CLICKED(IDC_CHECK1, &MyDlg::OnBnClickedCheck1)
+	ON_BN_CLICKED(IDC_CHECK2, &MyDlg::OnBnClickedCheck2)
+	ON_MESSAGE(KILLME, &MyDlg::KillThread)
+	ON_MESSAGE(GONNAKILL,&MyDlg::OnGONNAKILL)
+	ON_WM_TIMER()
 END_MESSAGE_MAP()
 
 
@@ -104,24 +111,38 @@ HCURSOR MyDlg::OnQueryDragIcon()
 void MyDlg::OnBnClickedOk()
 {
 	// TODO: добавьте свой код обработчика уведомлений
+	DWORD excode;
+	GetExitCodeThread(thr, &excode);
+	if (excode == STILL_ACTIVE)
+	{
+		PostMessage(GONNAKILL);
+		return;
+	}
+
 	UpdateData();
-	TerminateThread(thr, 0);
-	CloseHandle(thr);
 
 	log.ResetContent();
 	ctrlog.ResetContent();
 
+	ktdrw.clear();
+	vtdrw.clear();
 
+	tid = SetTimer(1, TIMERVAL, NULL);
+	gonnakill = false;
 	thr = CreateThread(NULL, NULL, thfunc, this, NULL, NULL);
-	
 }
 
 
 DWORD WINAPI MyDlg::thfunc(LPVOID p)
 {
 	srand(time(NULL));
+	
+	float clck = clock();
 
 	MyDlg* buf = (MyDlg*)p;
+
+	buf->gonnakill = false;
+
 	int n = buf->n;
 	int len = buf->len;
 	vector<double>iter;
@@ -131,6 +152,8 @@ DWORD WINAPI MyDlg::thfunc(LPVOID p)
 		auto linearA = GetRandomMatrix(n);
 
 		vector<double>sigma;
+
+
 		thread th1
 		(
 			[&sigma, linearA, n]()
@@ -145,14 +168,18 @@ DWORD WINAPI MyDlg::thfunc(LPVOID p)
 		auto x = GetRandomB(n);
 		thread th2
 		(
-			[&calc, A, B, n, &x]()
+			[&calc, A, B, n, &x, buf]()
 			{
 				MHJ(n, A, B, x, calc);
 			}
 		);
-
+		
 		th1.join();
 		th2.join();
+			
+
+		if (buf->gonnakill)buf->PostMessageW(KILLME);
+
 
 		if(buf->filtr)
 		if (calc > buf->cap)
@@ -169,10 +196,13 @@ DWORD WINAPI MyDlg::thfunc(LPVOID p)
 			str.Format(L"Обусловленность: %.2f", sigma[0] / sigma[n - 1]);
 			buf->ctrlog.InsertString(-1, str);
 
-			buf->ctrlog.InsertString(-1, L" ");
+			str.Format(L"Время выполнения: %.2f cек", (clock() - clck) / 1000.);
+			buf->ctrlog.InsertString(-1, str);
+
 			buf->ctrlog.InsertString(-1, L" ");
 
 			buf->ctrlog.SetTopIndex(buf->ctrlog.GetCount() - 1);
+			i--;
 			continue;
 		}
 
@@ -180,10 +210,6 @@ DWORD WINAPI MyDlg::thfunc(LPVOID p)
 		iter.push_back(calc);
 		cas.push_back(sigma[0] / sigma[n - 1]);
 
-
-		
-		buf->drw.DrawGraph(iter, cas);
-		
 
 		CString str;
 		str.Format(L"Позиция в выборке: %d", i);
@@ -195,15 +221,53 @@ DWORD WINAPI MyDlg::thfunc(LPVOID p)
 
 		str.Format(L"Обусловленность: %.2f", sigma[0] / sigma[n - 1]);
 		buf->log.InsertString(-1, str);
-		
-		buf->log.InsertString(-1, L" ");
+
+		str.Format(L"Время выполнения: %.2f cек", (clock() - clck) / 1000.);
+		buf->log.InsertString(-1, str);
+
 		buf->log.InsertString(-1, L" ");
 
 		buf->log.SetTopIndex(buf->log.GetCount() - 1);
 
 		
+		if (buf->NeedToDraw)
+		{
+			buf->NeedToDraw = false;
+			buf->ktdrw.push_back(cas);
+			buf->vtdrw.push_back(iter);
+		}
 	}
 
+	buf->KillTimer(buf->tid);
+
+
+	if (buf->appr)
+	{
+		vector<double>x;
+		x.push_back(RANDMIN + RANDMAX * double(rand()) / double(RAND_MAX));
+		x.push_back(RANDMIN + RANDMAX * double(rand()) / double(RAND_MAX));
+
+		
+		CString str;
+		str.Format(L"Вычисление аппроксимирующих коэффициентов");
+		buf->log.InsertString(-1, str);
+		buf->log.InsertString(-1, L" ");
+		buf->log.SetTopIndex(buf->log.GetCount() - 1);
+
+
+		int calc = 0;
+		LinearApprMHJ(2, iter, cas, x, calc);
+		buf->drw.DrawAppr(iter, cas, x);
+	}
+	else buf->drw.DrawGraph(iter, cas);
+
+	CString str;
+	str.Format(L"Завершено!");
+	buf->log.InsertString(-1, str);
+	str.Format(L"Полное время выполнения: %.2f cек", (clock() - clck)/1000.);
+	buf->log.InsertString(-1, str);
+
+	buf->log.SetTopIndex(buf->log.GetCount() - 1);
 
 	return 0;
 }
@@ -216,4 +280,52 @@ void MyDlg::OnBnClickedCheck1()
 {
 	// TODO: добавьте свой код обработчика уведомлений
 	filtr = !filtr;
+}
+
+
+void MyDlg::OnBnClickedCheck2()
+{
+	// TODO: добавьте свой код обработчика уведомлений
+	appr = !appr;
+}
+
+
+afx_msg void MyDlg::OnTimer(UINT_PTR idEvent)
+{
+	NeedToDraw = true;
+
+	while (!vtdrw.empty())
+	{
+		drw.DrawGraph(vtdrw[0], ktdrw[0]);
+		vtdrw.erase(vtdrw.begin());
+		ktdrw.erase(ktdrw.begin());
+	}
+}
+
+
+afx_msg LRESULT MyDlg::KillThread(WPARAM wParam, LPARAM lParam)
+{
+	TerminateThread(thr, 0);
+	CloseHandle(thr);
+
+
+	UpdateData();
+
+	log.ResetContent();
+	ctrlog.ResetContent();
+
+	ktdrw.clear();
+	vtdrw.clear();
+
+	tid = SetTimer(1, TIMERVAL, NULL);
+	gonnakill = false;
+	thr = CreateThread(NULL, NULL, thfunc, this, NULL, NULL);
+
+	return 0;
+}
+
+afx_msg LRESULT MyDlg::OnGONNAKILL(WPARAM wParam, LPARAM lParam)
+{
+	gonnakill = true;
+	return 0;
 }

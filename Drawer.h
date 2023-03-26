@@ -32,7 +32,8 @@ public:
 	void Create(HWND hWnd);
 	
 	void Drawer::DrawGraph(vector<double> data, vector<double> key);
-	
+	void Drawer::DrawAppr(vector<double>val, vector<double>key, vector<double>appr);
+
 	void Redraw();
 	void Clear();
 };

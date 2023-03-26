@@ -4,8 +4,9 @@
 
 #pragma once
 
-#define TIMERVAL 1000
-
+#define TIMERVAL 300
+#define GONNAKILL (WM_USER+0)
+#define KILLME (WM_USER+1)
 #include"Drawer.h"
 #include"func.h"
 
@@ -47,4 +48,14 @@ public:
 	afx_msg void OnBnClickedCheck1();
 	bool filtr;
 	double cap;
+	bool appr;
+	afx_msg void OnBnClickedCheck2();
+	afx_msg LRESULT KillThread(WPARAM wParam, LPARAM lParam);
+	afx_msg LRESULT OnGONNAKILL(WPARAM wParam, LPARAM lParam);
+	afx_msg void MyDlg::OnTimer(UINT_PTR idEvent);
+	bool NeedToDraw;
+	vector<vector<double>>ktdrw, vtdrw;
+	DWORD_PTR tid;
+	bool ReadyToBeTerminated;
+	bool gonnakill;
 };
