@@ -183,30 +183,30 @@ DWORD WINAPI MyDlg::thfunc(LPVOID p)
 		if (buf->gonnakill)buf->PostMessageW(KILLME);
 
 
-		if(buf->filtr)
-		if (calc > buf->cap)
-		{
-			CString str;
+		if (buf->filtr)
+			if ((calc > buf->cap) || (sigma[0] / sigma[n - 1] > buf->cap))
+			{
+				CString str;
 
-			str.Format(L"Позиция в выборке: %d", i);
-			buf->ctrlog.InsertString(-1, str);
+				str.Format(L"Позиция в выборке: %d", i);
+				buf->ctrlog.InsertString(-1, str);
 
 
-			str.Format(L"Число итераций: %d", calc);
-			buf->ctrlog.InsertString(-1, str);
+				str.Format(L"Число итераций: %d", calc);
+				buf->ctrlog.InsertString(-1, str);
 
-			str.Format(L"Обусловленность: %.2f", sigma[0] / sigma[n - 1]);
-			buf->ctrlog.InsertString(-1, str);
+				str.Format(L"Обусловленность: %.2f", sigma[0] / sigma[n - 1]);
+				buf->ctrlog.InsertString(-1, str);
 
-			str.Format(L"Время выполнения: %.2f cек", (clock() - clck) / 1000.);
-			buf->ctrlog.InsertString(-1, str);
+				str.Format(L"Время выполнения: %.2f cек", (clock() - clck) / 1000.);
+				buf->ctrlog.InsertString(-1, str);
 
-			buf->ctrlog.InsertString(-1, L" ");
+				buf->ctrlog.InsertString(-1, L" ");
 
-			buf->ctrlog.SetTopIndex(buf->ctrlog.GetCount() - 1);
-			i--;
-			continue;
-		}
+				buf->ctrlog.SetTopIndex(buf->ctrlog.GetCount() - 1);
+				i--;
+				continue;
+			}
 
 
 		iter.push_back(calc);
