@@ -9,7 +9,7 @@
 #define KILLME (WM_USER+1)
 #include"Drawer.h"
 #include"func.h"
-
+#include<chrono>
 
 // Диалоговое окно MyDlg
 class MyDlg : public CDialogEx
@@ -59,4 +59,11 @@ public:
 	bool ReadyToBeTerminated;
 	bool gonnakill;
 	int ApprN;
+	int GlobalCounter;
+	vector<double>iter;
+	vector<double>cas;
+	int GlobalClock;
 };
+
+
+DWORD WINAPI multithread(LPVOID);

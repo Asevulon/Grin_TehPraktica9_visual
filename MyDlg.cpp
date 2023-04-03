@@ -129,14 +129,33 @@ void MyDlg::OnBnClickedOk()
 	ktdrw.clear();
 	vtdrw.clear();
 
+	iter.clear();
+	cas.clear();
+
+
 	tid = SetTimer(1, TIMERVAL, NULL);
 	gonnakill = false;
+	GlobalCounter = 0;
+	CloseHandle(thr);
+	GlobalClock = clock();
 	thr = CreateThread(NULL, NULL, thfunc, this, NULL, NULL);
 }
 
 
+struct multithreadData
+{
+	MyDlg* dlg = nullptr;
+	int id = 0;
+	multithreadData() :dlg(nullptr), id(0) {}
+	multithreadData(MyDlg* dlg, int id) :dlg(dlg), id(id) {}
+};
+CRITICAL_SECTION cs;
+
 DWORD WINAPI MyDlg::thfunc(LPVOID p)
 {
+	InitializeCriticalSection(&cs);
+
+
 	srand(time(NULL));
 	
 	float clck = clock();
@@ -147,12 +166,92 @@ DWORD WINAPI MyDlg::thfunc(LPVOID p)
 
 	int n = buf->n;
 	int len = buf->len;
-	vector<double>iter;
-	vector<double>cas;
-	for (int i = 0; i < len; i++)
+	
+	multithreadData td1(buf, 1);
+	multithreadData td2(buf, 2);
+	multithreadData td3(buf, 3);
+	multithreadData td4(buf, 4);
+		
+	HANDLE thread1 = CreateThread(NULL, NULL, multithread, &td1, NULL, NULL);
+	HANDLE thread2 = CreateThread(NULL, NULL, multithread, &td2, NULL, NULL);
+	HANDLE thread3 = CreateThread(NULL, NULL, multithread, &td3, NULL, NULL);
+	HANDLE thread4 = CreateThread(NULL, NULL, multithread, &td4, NULL, NULL);
+		
+
+	while (buf->GlobalCounter < len)
+	{
+		if (buf->gonnakill)
+		{
+			CloseHandle(thread1);
+			CloseHandle(thread2);
+			CloseHandle(thread3);
+			CloseHandle(thread4);
+			ExitThread(0);
+		}
+		CString timestr;
+		timestr.Format(L"Текущее время выполнения: %.2f", (clock() - clck) / 1000.);
+		buf->log.InsertString(-1, timestr);
+		timestr.Format(L"длина массива: %d", buf->iter.size());
+		buf->log.InsertString(-1, timestr);
+		buf->log.SetTopIndex(buf->log.GetCount() - 1);
+
+		Sleep(0);
+	}
+
+	buf->KillTimer(buf->tid);
+	
+	CloseHandle(thread1);
+	CloseHandle(thread2);
+	CloseHandle(thread3);
+	CloseHandle(thread4);
+
+	if (buf->appr)
+	{
+		vector<double>x;
+		for (int i = 0; i < buf->ApprN; i++) x.push_back(RANDMIN + RANDMAX * double(rand()) / double(RAND_MAX));
+
+
+		CString str;
+		str.Format(L"Вычисление аппроксимирующих коэффициентов");
+		buf->log.InsertString(-1, str);
+		buf->log.InsertString(-1, L" ");
+		buf->log.SetTopIndex(buf->log.GetCount() - 1);
+
+
+		int calc = 0;
+		ApprMHJ(buf->ApprN, buf->iter, buf->cas, x, calc);
+		vector<double>aval, akey;
+		MakeApprValnKeys(x, *min_element(buf->cas.begin(), buf->cas.end()), *max_element(buf->cas.begin(), buf->cas.end()), 200, aval, akey);
+		buf->drw.DrawAppr(buf->iter, buf->cas, aval, akey);
+	}
+	else buf->drw.DrawDots(buf->iter, buf->cas);
+
+	CString str;
+	str.Format(L"Завершено!");
+	buf->log.InsertString(-1, str);
+	str.Format(L"Полное время выполнения: %.2f cек", (clock() - clck)/1000.);
+	buf->log.InsertString(-1, str);
+
+	buf->log.SetTopIndex(buf->log.GetCount() - 1);
+
+	return 0;
+}
+
+DWORD WINAPI multithread(LPVOID p)
+{
+	multithreadData* td = (multithreadData*) p;
+	MyDlg* buf = td->dlg;
+
+	buf->gonnakill = false;
+	int lockalclck = buf->GlobalClock;
+	lockalclck += clock();
+	srand(lockalclck / td->id);
+	int n = buf->n;
+	int len = buf->len;
+	while (buf->GlobalCounter < len)
 	{
 		auto linearA = GetRandomMatrix(n);
-
+		
 		vector<double>sigma;
 
 
@@ -175,106 +274,35 @@ DWORD WINAPI MyDlg::thfunc(LPVOID p)
 				MHJ(n, A, B, x, calc, buf->cap);
 			}
 		);
-		
+
 		th1.join();
 		th2.join();
-			
-
-		if (buf->gonnakill)buf->PostMessageW(KILLME);
 
 
-		
-		if ((calc > buf->cap) || (sigma[0] / sigma[n - 1] > 500))
-		{
-			CString str;
-
-			str.Format(L"Позиция в выборке: %d", i);
-			buf->ctrlog.InsertString(-1, str);
+		if (buf->gonnakill)ExitThread(0);
 
 
-			str.Format(L"Число итераций: %d", calc);
-			buf->ctrlog.InsertString(-1, str);
 
-			str.Format(L"Обусловленность: %.2f", sigma[0] / sigma[n - 1]);
-			buf->ctrlog.InsertString(-1, str);
+		if ((calc > buf->cap) || (sigma[0] / sigma[n - 1] > 500))continue;
 
-			str.Format(L"Время выполнения: %.2f cек", (clock() - clck) / 1000.);
-			buf->ctrlog.InsertString(-1, str);
+		EnterCriticalSection(&cs);
 
-			buf->ctrlog.InsertString(-1, L" ");
+		buf->iter.push_back(calc);
+		buf->cas.push_back(sigma[0] / sigma[n - 1]);
 
-			buf->ctrlog.SetTopIndex(buf->ctrlog.GetCount() - 1);
-			i--;
-			continue;
-		}
-
-
-		iter.push_back(calc);
-		cas.push_back(sigma[0] / sigma[n - 1]);
-
-
-		CString str;
-		str.Format(L"Позиция в выборке: %d", i);
-		buf->log.InsertString(-1, str);
-
-		
-		str.Format(L"Число итераций: %d", calc);
-		buf->log.InsertString(-1, str);
-
-		str.Format(L"Обусловленность: %.2f", sigma[0] / sigma[n - 1]);
-		buf->log.InsertString(-1, str);
-
-		str.Format(L"Время выполнения: %.2f cек", (clock() - clck) / 1000.);
-		buf->log.InsertString(-1, str);
-
-		buf->log.InsertString(-1, L" ");
-
-		buf->log.SetTopIndex(buf->log.GetCount() - 1);
-
-		
 		if (buf->NeedToDraw)
 		{
 			buf->NeedToDraw = false;
-			buf->ktdrw.push_back(cas);
-			buf->vtdrw.push_back(iter);
+			buf->ktdrw.push_back(buf->cas);
+			buf->vtdrw.push_back(buf->iter);
 		}
-	}
-
-	buf->KillTimer(buf->tid);
-
-
-	if (buf->appr)
-	{
-		vector<double>x;
-		for (int i = 0; i < buf->ApprN; i++) x.push_back(RANDMIN + RANDMAX * double(rand()) / double(RAND_MAX));
-
+		buf->GlobalCounter++;
+		LeaveCriticalSection(&cs);
 		
-		CString str;
-		str.Format(L"Вычисление аппроксимирующих коэффициентов");
-		buf->log.InsertString(-1, str);
-		buf->log.InsertString(-1, L" ");
-		buf->log.SetTopIndex(buf->log.GetCount() - 1);
-
-
-		int calc = 0;
-		ApprMHJ(buf->ApprN, iter, cas, x, calc);
-		vector<double>aval, akey;
-		MakeApprValnKeys(x, *min_element(cas.begin(), cas.end()), *max_element(cas.begin(), cas.end()), 200, aval, akey);
-		buf->drw.DrawAppr(iter, cas, aval, akey);
 	}
-	else buf->drw.DrawGraph(iter, cas);
-
-	CString str;
-	str.Format(L"Завершено!");
-	buf->log.InsertString(-1, str);
-	str.Format(L"Полное время выполнения: %.2f cек", (clock() - clck)/1000.);
-	buf->log.InsertString(-1, str);
-
-	buf->log.SetTopIndex(buf->log.GetCount() - 1);
 
 	return 0;
 }
-
 
 
 
@@ -296,7 +324,7 @@ void MyDlg::OnBnClickedCheck2()
 afx_msg void MyDlg::OnTimer(UINT_PTR idEvent)
 {
 	NeedToDraw = true;
-
+	
 	while (!vtdrw.empty())
 	{
 		drw.DrawDots(vtdrw[0], ktdrw[0]);
