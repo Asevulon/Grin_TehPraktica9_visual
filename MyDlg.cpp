@@ -191,7 +191,7 @@ DWORD WINAPI MyDlg::thfunc(LPVOID p)
 		CString timestr;
 		timestr.Format(L"Текущее время выполнения: %.2f", (clock() - clck) / 1000.);
 		buf->log.InsertString(-1, timestr);
-		timestr.Format(L"длина массива: %d", buf->iter.size());
+		timestr.Format(L"Текущая итерация: %d", buf->iter.size());
 		buf->log.InsertString(-1, timestr);
 		buf->log.SetTopIndex(buf->log.GetCount() - 1);
 
