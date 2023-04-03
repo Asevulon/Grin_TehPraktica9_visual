@@ -4,7 +4,7 @@
 
 #pragma once
 
-#define TIMERVAL 300
+#define TIMERVAL 1000
 #define GONNAKILL (WM_USER+0)
 #define KILLME (WM_USER+1)
 #include"Drawer.h"

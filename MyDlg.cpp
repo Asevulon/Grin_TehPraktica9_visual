@@ -22,11 +22,11 @@ MyDlg::MyDlg(CWnd* pParent /*=nullptr*/)
 	, n(3)
 	, len(20)
 	, filtr(false)
-	, cap(1e4)
+	, cap(2e3)
 	, appr(false)
 	, NeedToDraw(false)
 	, ReadyToBeTerminated(true)
-	, ApprN(2)
+	, ApprN(3)
 {
 	m_hIcon = AfxGetApp()->LoadIcon(IDR_MAINFRAME);
 }
@@ -172,7 +172,7 @@ DWORD WINAPI MyDlg::thfunc(LPVOID p)
 		(
 			[&calc, A, B, n, &x, buf]()
 			{
-				MHJ(n, A, B, x, calc);
+				MHJ(n, A, B, x, calc, buf->cap);
 			}
 		);
 		
@@ -183,30 +183,30 @@ DWORD WINAPI MyDlg::thfunc(LPVOID p)
 		if (buf->gonnakill)buf->PostMessageW(KILLME);
 
 
-		if (buf->filtr)
-			if ((calc > buf->cap) || (sigma[0] / sigma[n - 1] > buf->cap))
-			{
-				CString str;
+		
+		if ((calc > buf->cap) || (sigma[0] / sigma[n - 1] > 500))
+		{
+			CString str;
 
-				str.Format(L"Позиция в выборке: %d", i);
-				buf->ctrlog.InsertString(-1, str);
+			str.Format(L"Позиция в выборке: %d", i);
+			buf->ctrlog.InsertString(-1, str);
 
 
-				str.Format(L"Число итераций: %d", calc);
-				buf->ctrlog.InsertString(-1, str);
+			str.Format(L"Число итераций: %d", calc);
+			buf->ctrlog.InsertString(-1, str);
 
-				str.Format(L"Обусловленность: %.2f", sigma[0] / sigma[n - 1]);
-				buf->ctrlog.InsertString(-1, str);
+			str.Format(L"Обусловленность: %.2f", sigma[0] / sigma[n - 1]);
+			buf->ctrlog.InsertString(-1, str);
 
-				str.Format(L"Время выполнения: %.2f cек", (clock() - clck) / 1000.);
-				buf->ctrlog.InsertString(-1, str);
+			str.Format(L"Время выполнения: %.2f cек", (clock() - clck) / 1000.);
+			buf->ctrlog.InsertString(-1, str);
 
-				buf->ctrlog.InsertString(-1, L" ");
+			buf->ctrlog.InsertString(-1, L" ");
 
-				buf->ctrlog.SetTopIndex(buf->ctrlog.GetCount() - 1);
-				i--;
-				continue;
-			}
+			buf->ctrlog.SetTopIndex(buf->ctrlog.GetCount() - 1);
+			i--;
+			continue;
+		}
 
 
 		iter.push_back(calc);
@@ -299,7 +299,7 @@ afx_msg void MyDlg::OnTimer(UINT_PTR idEvent)
 
 	while (!vtdrw.empty())
 	{
-		drw.DrawGraph(vtdrw[0], ktdrw[0]);
+		drw.DrawDots(vtdrw[0], ktdrw[0]);
 		vtdrw.erase(vtdrw.begin());
 		ktdrw.erase(ktdrw.begin());
 	}

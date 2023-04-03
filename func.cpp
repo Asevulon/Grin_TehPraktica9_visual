@@ -98,7 +98,7 @@ int svd_hestenes(int m_m, int n_n, vector<double>& a, vector<double>& u, vector<
 
 	return iter;
 }
-float MHJ(int kk, vector<vector<double>>A, vector<double>B,vector<double>& x, int& calc)
+float MHJ(int kk, vector<vector<double>>A, vector<double>B,vector<double>& x, int& calc, int calccap)
 {
 	calc = 0;
 	// kk - количество параметров; x - массив параметров
@@ -122,7 +122,7 @@ float MHJ(int kk, vector<vector<double>>A, vector<double>B,vector<double>& x, in
 	while (1)
 	{
 		calc++; // Счетчик итераций. Можно игнорировать
-
+		if (calc > calccap)break;
 		x[j] = y[j] + k;
 		z = mist(A, B , x);
 		if (z >= fi) {

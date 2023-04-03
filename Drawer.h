@@ -33,6 +33,7 @@ public:
 	
 	void Drawer::DrawGraph(vector<double> data, vector<double> key);
 	void Drawer::DrawAppr(vector<double>val, vector<double>key, vector<double>apprval, vector<double> apprkey);
+	void Drawer::DrawDots(vector<double> data, vector<double> key);
 
 
 	void Redraw();
