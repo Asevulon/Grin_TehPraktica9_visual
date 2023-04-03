@@ -235,14 +235,14 @@ void Drawer::DrawDots(vector<double> data, vector<double> key)
 	data = convert_range(data, actual_top, actual_bottom, data_y_max, data_y_min);
 	key = convert_range(key, actual_right, actual_left, data_x_max, data_x_min);
 
-	for (int i = 0; i < key.size() - 1; i++)
+	for (int i = 0; i < key.size(); i++)
 	{
 		memDC.Ellipse(key[i] - 2, data[i] - 2, key[i] + 2, data[i] + 2);
 	}
 
-	memDC.SelectObject(&data_pen2);
+	//memDC.SelectObject(&data_pen2);
 
-	memDC.Ellipse(key[key.size() - 1] - 2, data[data.size() - 1] - 2, key[key.size() - 1] + 2, data[data.size() - 1] + 2);
+	//memDC.Ellipse(key[key.size() - 1] - 2, data[data.size() - 1] - 2, key[key.size() - 1] + 2, data[data.size() - 1] + 2);
 
 
 	dc->BitBlt(0, 0, frame.Width(), frame.Height(), &memDC, 0, 0, SRCCOPY);
